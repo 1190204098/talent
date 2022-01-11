@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.talent.dao.IResumeDao">
+    <!-- 根据用户id查询简历 -->
+    <select id="findResumeByUid" resultType="Resume" parameterType="Integer">
+        select reid, uid, name, origin, politicalLandscape, graduationTime, workplace, occupation, workTime, educationalExperience, internshipExperience, award, skillCertificate, professionalSkills, selfEvaluation, recommend from resume where uid = #{uid};
+    </select>
+    <!-- 增加简历 -->
+    <insert id="addResume">
+        insert into resume(uid, name, origin, politicalLandscape, graduationTime, workplace, occupation, workTime, educationalExperience, internshipExperience, award, skillCertificate, professionalSkills, selfEvaluation, recommend, pic)
+        values (#{uid}, #{resume.name}, #{resume.origin}, #{resume.politicalLandscape}, #{resume.graduationTime}, #{resume.workplace}, #{resume.occupation}, #{resume.workTime}, #{resume.educationalExperience}, #{resume.internshipExperience}, #{resume.award}, #{resume.skillCertificate}, #{resume.professionalSkills}, #{resume.selfEvaluation}, #{resume.recommend}, #{resume.pic})
+    </insert>
+    <!-- 更新简历 -->
+    <update id="updateResume">
+        update resume
+        set name = #{resume.name}, origin = #{resume.origin}, politicalLandscape = #{resume.politicalLandscape}, graduationTime = #{resume.graduationTime}, workplace = #{resume.workplace}, occupation = #{resume.occupation}, workTime = #{resume.workTime}, educationalExperience = #{resume.educationalExperience}, internshipExperience = #{resume.internshipExperience}, award = #{resume.award}, skillCertificate = #{resume.skillCertificate}, professionalSkills = #{resume.professionalSkills}, selfEvaluation = #{resume.selfEvaluation}, recommend = #{resume.recommend}
+        where uid = #{uid};
+    </update>
+    <!-- 增加附件 -->
+    <update id="addPic">
+        update resume set pic = #{pic} where uid = #{uid};
+    </update>
+
+    <select id="fuzzySearch" resultType="com.talent.domain.Resume">
+        select * from resume
+        <trim prefix="where" suffixOverrides="and">
+            <if test="searchParam.name != null and searchParam.name!=''">name like '%${searchParam.name}%' and</if>
+            <if test="searchParam.workplace != null and searchParam.workplace!=''">workplace=#{searchParam.workplace} and</if>
+            <if test="searchParam.occupation != null and searchParam.occupation!=''">occupation=#{searchParam.occupation} and</if>
+            <if test="searchParam.workTime != null and searchParam.workTime!=''">workTime>=#{searchParam.workTime} and</if>
+        </trim>
+        limit #{startNo},#{pageSize}
+    </select>
+
+    <select id="countFuzzySearch" resultType="int">
+        select count(*) from resume
+        <trim prefix="where" suffixOverrides="and">
+            <if test="searchParam.name != null and searchParam.name!=''">name like '%${searchParam.name}%' and</if>
+            <if test="searchParam.workplace != null and searchParam.workplace!=''">workplace=#{searchParam.workplace} and</if>
+            <if test="searchParam.occupation != null and searchParam.occupation!=''">occupation=#{searchParam.occupation} and</if>
+            <if test="searchParam.workTime != null and searchParam.workTime!=''">workTime>=#{searchParam.workTime} and</if>
+        </trim>
+    </select>
+</mapper>

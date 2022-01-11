@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--开启注解扫描-->
+    <context:annotation-config/>
+    <context:component-scan base-package="com.talent">
+        <!--不扫描controller下的包-->
+        <context:exclude-filter type="regex" expression="com.talent.controller.*"/>
+    </context:component-scan>
+
+    <!--加载配置文件-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!--配置shiro-->
+    <!--配置 SecurityManager!-->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="authenticator" ref="authenticator"/>
+        <property name="authorizer" ref="authorizer"/>
+        <!--realms-->
+        <property name="realms">
+            <list>
+                <ref bean="adminRealm"/>
+                <ref bean="userRealm"/>
+            </list>
+        </property>
+        <property name="cacheManager" ref="cacheManager"/>
+    </bean>
+
+    <!--shiro缓存-->
+    <bean id="cacheManager" class="org.apache.shiro.cache.MemoryConstrainedCacheManager"/>
+
+    <!--自定义Authenticator-->
+    <bean id="authenticator" class="com.talent.realm.UserModularRealmAuthenticator">
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"/>
+        </property>
+    </bean>
+
+    <!--自定义Authorizer-->
+    <bean id="authorizer" class="com.talent.realm.UserModularRealmAuthorizer"/>
+
+    <!--配置 Realm-->
+    <bean id="adminRealm" class="com.talent.realm.AdminRealm"/>
+    <bean id="userRealm" class="com.talent.realm.UserRealm"/>
+
+    <!--配置 LifecycleBeanPostProcessor，用来管理shiro一些bean的生命周期-->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <!--配置 ShiroFilter.-->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+
+    <!--配置连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${db.driver}"/>    <!-- 驱动程序 -->
+        <property name="url" value="${db.url}"/><!-- 连接地址 -->
+        <property name="username" value="${db.user}"/>    <!-- 用户名 -->
+        <property name="password" value="${db.password}"/>    <!-- 密码 -->
+        <property name="filters" value="config,stat,wall" />
+        <property name="connectionProperties" value="config.decrypt=true;config.decrypt.key=${db.publicKey}" />
+        <property name="initialSize" value="${db.initialSize}"/>    <!-- 初始化连接数 -->
+        <property name="maxActive" value="${db.maxActive}"/>
+        <property name="maxWait" value="${db.maxWait}"/>
+        <property name="minIdle" value="${db.minIdle}"/>
+        <!-- 超过时间限制是否回收
+        <property name="removeAbandoned" value="true" />
+        &lt;!&ndash; 超时时间，单位：毫秒 &ndash;&gt;
+        <property name="removeAbandonedTimeoutMillis" value="180"/>
+        &lt;!&ndash; 连接回收时是否记录日志 &ndash;&gt;
+        <property name="logAbandoned" value="true" />-->
+
+        <property name="breakAfterAcquireFailure" value="true"/>
+        <property name="connectionErrorRetryAttempts" value="0"/>
+
+        <!--每30秒运行一次空闲连接回收器-->
+        <property name="timeBetweenEvictionRunsMillis" value="30000" />
+
+        <!--申请连接的时候检测，如果空闲时间大于timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效-->
+        <property  name="testWhileIdle"  value="true"  />
+
+        <property name="testOnBorrow" value="false" />
+        <property name="testOnReturn" value="false" />
+    </bean>
+
+    <!--spring整合Mybatis框架-->
+    <!--配置SqlSessionFactory工厂-->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 配置所有资源文件的保存路径的资源匹配符 -->
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis.cfg.xml"/>
+    </bean>
+
+    <!-- 配置自动创建数据层实现类的开发包 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- 定义该包中的访问为自动配置实现 -->
+        <property name="basePackage" value="com.talent.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sessionFactory"/>
+    </bean>
+
+    <!-- 定义数据库的声明式事务控制，直接与业务方法对应 -->
+    <!-- 定义事务的处理切入点 -->
+    <aop:config expose-proxy="true">
+        <aop:pointcut expression="execution(* com.talent..service..*.*(..))" id="pointcut"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut"/>
+    </aop:config>
+    <!-- 进入到了事务的配置声明 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!-- 定义一切与服务层有关的控制方法名称，只要是使用了特定的名称那么就会自动处理事务 -->
+        <tx:attributes>
+            <tx:method name="insert*" propagation="REQUIRED"/>
+            <tx:method name="add*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="change*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="remove*" propagation="REQUIRED"/>
+            <tx:method name="create*" propagation="REQUIRED"/>
+            <tx:method name="set*" propagation="REQUIRED"/>
+            <tx:method name="get*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="check*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="load*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="list*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="find*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="*" propagation="REQUIRED" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+    <!-- 定义数据库的事务控制，本事务控制直接针对于数据库连接操作进行 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+</beans>

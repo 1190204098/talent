@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.talent.dao.IArticleDao">
+
+    <insert id="addNews" parameterType="Article">
+        insert into talent.article(title,aid,content,date) VALUES (#{title},#{aid},#{content},#{date})
+    </insert>
+
+    <resultMap id="articleMap" type="Article">
+        <result property="aid" column="aid"/>
+        <association property="aName" column="aid" select="com.talent.dao.IAdminDao.findaNameByAid"/>
+    </resultMap>
+
+    <select id="findAllArticle" resultMap="articleMap">
+        select * from article order by date DESC;
+    </select>
+
+    <select id="findArticleByArtid" resultMap="articleMap" parameterType="Integer">
+        select * from article where artid = #{artid};
+    </select>
+
+    <select id="findAndPaginationArticles" resultMap="articleMap">
+        select * from article limit #{startNo},#{pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(*) from article
+    </select>
+</mapper>

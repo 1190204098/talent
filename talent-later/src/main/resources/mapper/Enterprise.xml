@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.talent.dao.IEnterpriseDao">
+
+    <select id="findAndPaginationAll" resultType="com.talent.dto.EnterpriseDTO">
+        select uname,ename, address, enterprise.tel, email, intro from enterprise inner join user on enterprise.uid = user.uid limit #{startNo},#{pageSize}
+    </select>
+
+    <select id="findEnterpriseByUid" resultType="com.talent.domain.Enterprise">
+        select * from enterprise where uid=#{uid}
+    </select>
+
+    <select id="findAndPaginationEnterpriseLikeEname" resultType="com.talent.dto.EnterpriseDTO">
+        select uname,ename, address, enterprise.tel, email, intro from enterprise inner join user on enterprise.uid = user.uid where ename like '%${ename}%' limit #{startNo},#{pageSize}
+    </select>
+
+    <insert id="addEnterprise" parameterType="enterprise">
+        insert into enterprise(uid, ename, address, tel, email, intro, status) VALUE (#{uid},#{ename},#{address},#{tel},#{email},#{intro},#{status})
+    </insert>
+
+    <update id="updateEnterpriseByUid" parameterType="enterprise">
+        update enterprise
+        <set>
+            <if test="ename != null">ename=#{ename},</if>
+            <if test="address != null">address=#{address},</if>
+            <if test="tel != null">tel=#{tel},</if>
+            <if test="email != null">email=#{email},</if>
+            <if test="intro != null">intro=#{intro},</if>
+            <if test="status != null">status=#{status},</if>
+        </set>
+        where uid=#{uid}
+    </update>
+
+    <select id="findAndPageAllWait4ReviewEnterprises" resultType="com.talent.dto.EnterpriseDTO">
+        select uname,ename, address, enterprise.tel, email, intro from enterprise inner join user on enterprise.uid = user.uid where status=0 or status is null limit #{startNo},#{pageSize}
+    </select>
+
+    <select id="findEnterpriseByEname" resultType="com.talent.domain.Enterprise">
+        select * from enterprise where ename=#{ename}
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(*) from enterprise
+    </select>
+
+    <select id="countLikeEname" resultType="java.lang.Integer">
+        select count(*) from enterprise where ename like '%${ename}%'
+    </select>
+
+    <select id="countWait4Review" resultType="java.lang.Integer">
+        select count(*) from enterprise where status=0
+    </select>
+</mapper>

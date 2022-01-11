@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.talent.dao.IActionDao">
+
+    <select id="findActionByAid" parameterType="Integer" resultType="String">
+       select flag from action where actid in(select actid from role_action where rid in(select rid from admin_role where aid=#{aid}));
+    </select>
+    <select id="findActionByUid" resultType="java.lang.String">
+        select flag from action where actid in(select actid from role_action where rid in(select rid from user_role where uid=#{uid}));
+    </select>
+
+</mapper>

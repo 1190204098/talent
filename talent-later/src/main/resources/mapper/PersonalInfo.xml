@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.talent.dao.IPinfoDao">
+    <!-- 查询所有信息 -->
+    <select id="findAll" resultType="PersonalInfo">
+        select * from personal_info;
+    </select>
+    <!-- 根据用户id查询个人信息 -->
+    <select id="findInfoByUid" resultType="PersonalInfo" parameterType="Integer">
+        select * from personal_info where uid = #{uid};
+    </select>
+    <!-- 增加个人信息记录 -->
+    <insert id="addInfo" parameterType="PersonalInfo">
+        insert into personal_info(uid,sex,address,email,birthday,specialty,wages,college)
+        values(#{info.uid},#{info.sex},#{info.address},#{info.email},#{info.birthday},#{info.specialty},#{info.wages},#{info.college});
+    </insert>
+    <!-- 为用户增加头像 -->
+    <update id="addPic">
+        update personal_info set pic=#{pic} where uid = #{uid};
+    </update>
+    <!-- 更新用户信息 -->
+    <update id="updateInfoByUid">
+        update personal_info set
+            sex=#{info.sex}, address=#{info.address}, email=#{info.email}, birthday=#{info.birthday}, specialty=#{info.specialty}, wages=#{info.wages},  college=#{info.college}
+            where uid = #{uid};
+    </update>
+</mapper>

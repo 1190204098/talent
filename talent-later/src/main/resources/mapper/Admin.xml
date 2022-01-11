@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.talent.dao.IAdminDao">
+
+    <!--通过账户名称查询-->
+    <select id="findAdminByaName" parameterType="String" resultType="Admin">
+        select * from admin where aName=#{aName};
+    </select>
+
+    <!--通过账户名称修改-->
+    <update id="updateAdmin" parameterType="Admin">
+        update admin set aName=#{admin.aName},password=#{admin.password},privilege=#{admin.privilege},date=#{admin.date},locked=#{admin.locked} where aName = #{name}
+    </update>
+
+    <insert id="addAdmin" parameterType="Admin">
+        insert into admin(aName, password, privilege, date, locked) values(#{admin.aName},#{admin.password},#{admin.privilege},#{admin.date},#{admin.locked})
+    </insert>
+
+    <select id="findAll" resultType="Admin">
+        select * from admin
+    </select>
+
+    <insert id="createAdminAndRole" parameterType="java.util.Map">
+        insert into admin_role(rid,aid) values (#{rid},#{aid})
+    </insert>
+
+    <select id="findRoleByaName" resultType="String" parameterType="String">
+        select title from role where rid in (select rid from admin_role where aid IN (select aid from admin where aName = #{aName}))limit 1
+    </select>
+
+    <select id="findAdminLikeaNameCountNum" resultType="Integer" parameterType="String">
+        select count(*) from admin where aName like '%${aName}%'
+    </select>
+
+    <select id="findAdminLikeaName" resultMap="adminAndRole">
+        select aName,date,locked from admin where aid in (select aid from admin_role where rid in (select rid from role)) and aName like '%${aName}%' limit #{startNo},#{pageSize}
+    </select>
+
+    <select id="findaNameByAid" resultType="java.lang.String" parameterType="Integer">
+        select aName from admin where aid = #{aid}
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(*) from admin
+    </select>
+
+    <resultMap id="adminAndRole" type="com.talent.dto.AdminDTO">
+        <result property="aName" column="aName" jdbcType="VARCHAR" javaType="String"/>
+        <result property="date" column="date" jdbcType="DATE" javaType="Date"/>
+        <result property="locked" column="locked" jdbcType="INTEGER" javaType="Integer"/>
+        <!--mybatis延迟加载
+            property: 后面select语句的查询结果, 对应实体类字段
+            column: 数据库字段, select查询所使用的参数
+            select: 延迟加载所使用的查询方法
+        -->
+        <association property="role" column="aName" javaType="list" select="com.talent.dao.IAdminDao.findRoleByaName"/>
+    </resultMap>
+
+    <select id="findAndPage" resultMap="adminAndRole">
+        select aName,date,locked from admin where aid in (select aid from admin_role where rid in (select rid from role)) limit #{startPage},#{pageSize}
+    </select>
+
+</mapper>
